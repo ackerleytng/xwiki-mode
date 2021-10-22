@@ -53,6 +53,36 @@
   "Face for underlined text."
   :group 'xwiki-faces)
 
+(defface xwiki-strike-through-face
+  '((t (:strike-through t)))
+  "Face for strike-through text."
+  :group 'xwiki-faces)
+
+(defface xwiki-italic-face
+  '((t (:inherit italic)))
+  "Face for italic text."
+  :group 'xwiki-faces)
+
+(defface xwiki-code-face
+  '((t (:inherit fixed-pitch)))
+  "Face for code or monospace text."
+  :group 'xwiki-faces)
+
+(defface xwiki-inline-code-face
+  '((t (:inherit (markdown-code-face font-lock-constant-face))))
+  "Face for inline code."
+  :group 'xwiki-faces)
+
+(defface xwiki-superscript-face
+  '((t (:height 0.8)))
+  "Face for superscript code."
+  :group 'xwiki-faces)
+
+(defface xwiki-subscript-face
+  '((t (:height 0.8)))
+  "Face for subscript code."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -65,17 +95,53 @@
       (group (minimal-match (zero-or-more anything)))
       (group "__")))
 
-;; (string-match xwiki-underscore-regex "something __test__")
-;; (match-data)
-;; (match-string 10 "something __test__")
+(defconst xwiki-regex-italic
+  (rx (group "//")
+      (group (minimal-match (zero-or-more anything)))
+      (group "//")))
+
+(defconst xwiki-regex-strike-through
+  (rx (group "--")
+      (group (minimal-match (zero-or-more anything)))
+      (group "--")))
+
+(defconst xwiki-regex-monospace
+  (rx (group "##")
+      (group (minimal-match (zero-or-more anything)))
+      (group "##")))
+
+(defconst xwiki-regex-superscript
+  (rx (group "^^")
+      (group (minimal-match (zero-or-more anything)))
+      (group "^^")))
+
+(defconst xwiki-regex-subscript
+  (rx (group ",,")
+      (group (minimal-match (zero-or-more anything)))
+      (group ",,")))
 
 (defvar xwiki-mode-font-lock-keywords
-  `((,xwiki-regex-bold . ((1 'xwiki-markup-face prepend)
-                          (2 'xwiki-bold-face append)
-                          (3 'xwiki-markup-face prepend)))
-    (,xwiki-regex-underline . ((1 'xwiki-markup-face prepend)
-                               (2 'xwiki-underline-face append)
-                               (3 'xwiki-markup-face prepend)))))
+  `((,xwiki-regex-bold . ((1 'xwiki-markup-face)
+                          (2 'xwiki-bold-face)
+                          (3 'xwiki-markup-face)))
+    (,xwiki-regex-italic . ((1 'xwiki-markup-face)
+                            (2 'xwiki-italic-face)
+                            (3 'xwiki-markup-face)))
+    (,xwiki-regex-strike-through . ((1 'xwiki-markup-face)
+                                    (2 'xwiki-strike-through-face)
+                                    (3 'xwiki-markup-face)))
+    (,xwiki-regex-monospace . ((1 'xwiki-markup-face)
+                               (2 'xwiki-inline-code-face)
+                               (3 'xwiki-markup-face)))
+    (,xwiki-regex-underline . ((1 'xwiki-markup-face)
+                               (2 'xwiki-underline-face)
+                               (3 'xwiki-markup-face)))
+    (,xwiki-regex-subscript . ((1 'xwiki-markup-face)
+                               (2 'xwiki-subscript-face)
+                               (3 'xwiki-markup-face)))
+    (,xwiki-regex-superscript . ((1 'xwiki-markup-face)
+                                 (2 '(face xwiki-superscript-face display (raise 0.3)))
+                                 (3 'xwiki-markup-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"

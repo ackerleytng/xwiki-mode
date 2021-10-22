@@ -120,5 +120,60 @@ second line__"))
       (xwiki-test-range-has-face 15 16 'xwiki-markup-face)
       (xwiki-test-range-has-face 17 24 nil))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-italic-face ()
+  "Basic test for `xwiki-italic-face' of `xwiki-view-mode'."
+  (let ((test-string "regular //italic// regular"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 8 nil)
+      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+      (xwiki-test-range-has-face 11 16 'xwiki-italic-face)
+      (xwiki-test-range-has-face 17 18 'xwiki-markup-face)
+      (xwiki-test-range-has-face 19 26 nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-strike-through-face ()
+  "Basic test for `xwiki-strike-through-face' of `xwiki-view-mode'."
+  (let ((test-string "regular --strike-through-- regular"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 8 nil)
+      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+      (xwiki-test-range-has-face 11 24 'xwiki-strike-through-face)
+      (xwiki-test-range-has-face 25 26 'xwiki-markup-face)
+      (xwiki-test-range-has-face 27 35 nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-monospace-face ()
+  "Basic test for `xwiki-monospace-face' of `xwiki-view-mode'."
+  (let ((test-string "regular ##monospace## regular"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 8 nil)
+      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+      (xwiki-test-range-has-face 11 19 'xwiki-inline-code-face)
+      (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
+      (xwiki-test-range-has-face 22 30 nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-subscript-face ()
+  "Basic test for `xwiki-subscript-face' of `xwiki-view-mode'."
+  (let ((test-string "regular ,,subscript,, regular"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 8 nil)
+      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+      (xwiki-test-range-has-face 11 19 'xwiki-subscript-face)
+      (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
+      (xwiki-test-range-has-face 22 30 nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-superscript-face ()
+  "Basic test for `xwiki-superscript-face' of `xwiki-view-mode'."
+  (let ((test-string "regular ^^superscript^^ regular"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 8 nil)
+      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+      (xwiki-test-range-has-face 11 21 'xwiki-superscript-face)
+      (xwiki-test-range-has-face 22 23 'xwiki-markup-face)
+      (xwiki-test-range-has-face 24 32 nil))))
+
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
