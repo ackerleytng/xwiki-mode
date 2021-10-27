@@ -83,6 +83,11 @@
   "Face for subscript code."
   :group 'xwiki-faces)
 
+(defface xwiki-list-face
+  '((t (:inherit xwiki-markup-face)))
+  "Face for markup elements."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -120,6 +125,12 @@
       (group (minimal-match (zero-or-more anything)))
       (group ",,")))
 
+(defconst xwiki-regex-list
+  (rx (and (group line-start
+                  (or (and (1+ "1") (0+ "*")  ".")
+                      (1+ "*")))
+           (group space))))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-bold . ((1 'xwiki-markup-face)
                           (2 'xwiki-bold-face)
@@ -141,7 +152,9 @@
                                (3 'xwiki-markup-face)))
     (,xwiki-regex-superscript . ((1 'xwiki-markup-face)
                                  (2 '(face xwiki-superscript-face display (raise 0.3)))
-                                 (3 'xwiki-markup-face)))))
+                                 (3 'xwiki-markup-face)))
+    (,xwiki-regex-list . ((1 'xwiki-list-face)
+                          (2 nil)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"

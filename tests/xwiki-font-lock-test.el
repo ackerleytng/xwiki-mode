@@ -157,12 +157,12 @@ second line__"))
   "Basic test for `xwiki-subscript-face' of `xwiki-view-mode'."
   (let ((test-string "regular ,,subscript,, regular"))
     (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 19 'xwiki-subscript-face)
-      (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
-      (xwiki-test-range-has-face 22 30 nil))))
+     test-string
+     (xwiki-test-range-has-face 1 8 nil)
+     (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
+     (xwiki-test-range-has-face 11 19 'xwiki-subscript-face)
+     (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
+     (xwiki-test-range-has-face 22 30 nil))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-superscript-face ()
   "Basic test for `xwiki-superscript-face' of `xwiki-view-mode'."
@@ -174,6 +174,72 @@ second line__"))
       (xwiki-test-range-has-face 11 21 'xwiki-superscript-face)
       (xwiki-test-range-has-face 22 23 'xwiki-markup-face)
       (xwiki-test-range-has-face 24 32 nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-list-face-numbered ()
+  "Basic test for `xwiki-list-face' of `xwiki-view-mode'."
+  (let ((test-string "
+1. foo
+11. bar
+1. baz"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 1 nil)
+      (let* ((i (1+ (string-match "1\\. foo" test-string)))
+             (a (+ i 2)))
+        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 3) nil))
+      (let* ((i (1+ (string-match "11\\. bar" test-string)))
+             (a (+ i 3)))
+        (xwiki-test-range-has-face i (+ i 2) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 3) nil))
+      (let* ((i (1+ (string-match "1\\. baz" test-string)))
+             (a (+ i 2)))
+        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 3) nil)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-list-face-bulleted ()
+  "Basic test for `xwiki-list-face' of `xwiki-view-mode'."
+  (let ((test-string "
+* foo
+** bar
+* baz"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 1 nil)
+      (let* ((i (1+ (string-match "\\* foo" test-string)))
+             (a (1+ i)))
+        (xwiki-test-range-has-face i i 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 4) nil))
+      (let* ((i (1+ (string-match "\\*\\* bar" test-string)))
+             (a (+ i 2)))
+        (xwiki-test-range-has-face i (+ i 1) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 4) nil))
+      (let* ((i (1+ (string-match "\\* baz" test-string)))
+             (a (1+ i)))
+        (xwiki-test-range-has-face i i 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 4) nil)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-list-face-mixed ()
+  "Test for mixed numbered/bulleted for `xwiki-list-face' of `xwiki-view-mode'."
+  (let ((test-string "
+1. foo
+1*. bar
+1. baz"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 1 nil)
+      (let* ((i (1+ (string-match "1\\. foo" test-string)))
+             (a (+ i 2)))
+        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 3) nil))
+      (let* ((i (1+ (string-match "1\\*\\. bar" test-string)))
+             (a (+ i 3)))
+        (xwiki-test-range-has-face i (+ i 2) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 4) nil))
+      (let* ((i (1+ (string-match "1\. baz" test-string)))
+             (a (+ i 2)))
+        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
+        (xwiki-test-range-has-face a (+ a 3) nil)))))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
