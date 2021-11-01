@@ -61,6 +61,22 @@
   (dolist (loc (number-sequence begin end))
     (message "%d: %s" loc (get-char-property loc prop))))
 
+(defun xwiki-test-loc-has-property (loc prop value)
+  "Verify that character at loc (1-based) as prop equal to or containing VALUE."
+  (let* ((property (get-char-property loc prop))
+         (succeed (if (and property (listp property))
+                      (memq value property)
+                    (eq property value))))
+    (if succeed
+        (message "loc: %d (%s) => correct" loc (string (char-after loc)))
+      (message "loc: %d (%s) => expected %s: %s, actual: %s"
+               loc (string (char-after loc)) prop value property))
+    (should succeed)))
+
+(defun xwiki-test-loc-has-face (loc value)
+  "Verify that character at loc (1-based) as prop equal to or containing VALUE."
+  (xwiki-test-loc-has-property loc 'face value))
+
 (defun xwiki-test-range-has-property (begin end prop value)
   "Verify that range BEGIN to END has PROP equal to or containing VALUE."
   (let (vals fail-loc)
@@ -83,6 +99,52 @@
 (defun xwiki-test-range-has-face (begin end face)
   "Verify that the range from BEGIN to END has face FACE."
   (xwiki-test-range-has-property begin end 'face face))
+
+;;; Helpers ============================================================
+
+(defun xwiki--string-match-all (regexp string)
+  "Get a list of all regexp matches in a string"
+  (let* ((pos 0)
+         matches
+         (m (and (> (length string) 0) (string-match regexp string pos))))
+    (while m
+      (push m matches)
+      (setq pos (1+ m)
+            m (string-match regexp string pos)))
+    (reverse matches)))
+
+(defun xwiki--alist-loc-to-face (expectation expectation-pattern)
+  (let* ((marker (car expectation-pattern))
+         (face (cdr expectation-pattern))
+         (loc 0))
+    (let ((total 0)
+          (prev-len 0)
+          locs-to-face)
+      (dolist (s (split-string expectation "\n"))
+        (if-let ((matches (xwiki--string-match-all marker s)))
+            (setq locs-to-face
+                  (append
+                   locs-to-face
+                   (mapcar (lambda (i) (cons (- (+ total i) prev-len) face))
+                           matches)))
+          (setq prev-len (length s)
+                total (+ total prev-len 1))))
+      locs-to-face)))
+
+(defun xwiki--remove-lines (string pattern)
+  (let* ((lines (split-string string "\n"))
+         (filtered (seq-filter (lambda (l) (not (string-match pattern l))) lines)))
+    (mapconcat 'identity filtered "\n")))
+
+(defun xwiki--build-tests-from-expectation (expectation expectation-pattern test-string-length)
+  (let* ((loc-to-face (xwiki--alist-loc-to-face expectation expectation-pattern))
+         (tests (mapcar (lambda (p) `(xwiki-test-loc-has-face ,(car p) ,(cdr p))) loc-to-face))
+         (nils (remq
+                nil
+                (mapcar
+                 (lambda (i) (unless (alist-get i loc-to-face) (list 'xwiki-test-loc-has-face i nil)))
+                 (number-sequence 1 test-string-length)))))
+    (append tests nils)))
 
 ;;; Tests ============================================================
 
@@ -176,7 +238,7 @@ second line__"))
       (xwiki-test-range-has-face 24 32 nil))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-numbered ()
-  "Basic test for `xwiki-list-face' of `xwiki-view-mode'."
+  "Test for bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 1. foo
 11. bar
@@ -198,7 +260,7 @@ second line__"))
         (xwiki-test-range-has-face a (+ a 3) nil)))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-bulleted ()
-  "Basic test for `xwiki-list-face' of `xwiki-view-mode'."
+  "Test for bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 * foo
 ** bar
@@ -220,7 +282,7 @@ second line__"))
         (xwiki-test-range-has-face a (+ a 4) nil)))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-mixed ()
-  "Test for mixed numbered/bulleted for `xwiki-list-face' of `xwiki-view-mode'."
+  "Test for mixed numbered/bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 1. foo
 1*. bar
@@ -240,6 +302,37 @@ second line__"))
              (a (+ i 2)))
         (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
         (xwiki-test-range-has-face a (+ a 3) nil)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-list-face-not ()
+  "Test for list-like but not lists: `xwiki-list-face' of `xwiki-view-mode'."
+  (let ((test-string "
+ 1. foo
+ * bar
+*. baz
+*quux"))
+    (xwiki-test-string
+        test-string
+      (xwiki-test-range-has-face 1 (length test-string) nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-definition-list-face ()
+  "Test for definition lists for `xwiki-definition-list-face' of `xwiki-view-mode'."
+  (let* ((expectation "
+; term
+@
+: definition
+@
+:; nested term
+@@
+:: nested definition
+@@
+:not
+::not
+")
+         (expectation-pattern '("@" . 'xwiki-definition-list-face))
+         (test-string (xwiki--remove-lines expectation (car expectation-pattern)))
+         (tests (xwiki--build-tests-from-expectation
+                 expectation expectation-pattern (length test-string))))
+    (eval `(xwiki-test-string ,test-string ,@tests))))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
