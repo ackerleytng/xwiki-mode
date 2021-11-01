@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'ert)
+(require 'cl-extra)
 (require 'xwiki-mode)
 
 (defmacro xwiki-test-string-mode (mode string &rest body)
@@ -102,6 +103,11 @@
 
 ;;; Helpers ============================================================
 
+(defun alistp (list)
+  "Return T if LIST is an association list."
+  (and (listp list)
+       (cl-every (lambda (x) (consp x)) list)))
+
 (defun xwiki--build-tests (marked-string expected-faces)
   (let (out)
     (dolist (i (number-sequence 0 (1- (length marked-string))))
@@ -112,162 +118,120 @@
               out)))
     (reverse out)))
 
+(defun xwiki--test-with-marked-string (test-string marked-string markings)
+  (unless (alistp markings)
+    (error "markings has to be a proper alist"))
+  (let ((tests (xwiki--build-tests marked-string markings)))
+    (eval `(xwiki-test-string ,test-string ,@tests))))
+
 ;;; Tests ============================================================
 
 (ert-deftest test-xwiki-view-mode/xwiki-underline-face ()
   "Basic test for `xwiki-underline-face' of `xwiki-view-mode'."
-  (let ((test-string "regular __underline__ regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 19 'xwiki-underline-face)
-      (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
-      (xwiki-test-range-has-face 22 30 nil))))
+  (let ((  test-string "regular __underline__ regular")
+        (marked-string "regular ##@@@@@@@@@## regular")
+        (markings '((?# . 'xwiki-markup-face)
+                    (?@ . 'xwiki-underline-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 ;; TODO don't underline the \n character
 (ert-deftest test-xwiki-view-mode/xwiki-underline-face-multiline ()
   "Test `xwiki-underline-face' of `xwiki-view-mode'."
   (let ((test-string "__underline
 
-second line__"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 2 'xwiki-markup-face)
-      (xwiki-test-range-has-face 3 24 'xwiki-underline-face)
-      (xwiki-test-range-has-face 25 26 'xwiki-markup-face))))
+second line__")
+        ;; newlines must also be marked
+        (marked-string "%%@@@@@@@@@@@@@@@@@@@@@@%%")
+        (markings '((?% . 'xwiki-markup-face)
+                    (?@ . 'xwiki-underline-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-bold-face ()
   "Basic test for `xwiki-bold-face' of `xwiki-view-mode'."
-  (let ((test-string "regular **bold** regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 14 'xwiki-bold-face)
-      (xwiki-test-range-has-face 15 16 'xwiki-markup-face)
-      (xwiki-test-range-has-face 17 24 nil))))
+  (let ((  test-string "regular **bold** regular")
+        (marked-string "regular %%@@@@%% regular")
+        (markings '((?% . 'xwiki-markup-face)
+                    (?@ . 'xwiki-bold-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-italic-face ()
   "Basic test for `xwiki-italic-face' of `xwiki-view-mode'."
-  (let ((test-string "regular //italic// regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 16 'xwiki-italic-face)
-      (xwiki-test-range-has-face 17 18 'xwiki-markup-face)
-      (xwiki-test-range-has-face 19 26 nil))))
+  (let ((  test-string "regular //italic// regular")
+        (marked-string "regular %%@@@@@@%% regular")
+        (markings '((?% . 'xwiki-markup-face)
+                    (?@ . 'xwiki-italic-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-strike-through-face ()
   "Basic test for `xwiki-strike-through-face' of `xwiki-view-mode'."
-  (let ((test-string "regular --strike-through-- regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 24 'xwiki-strike-through-face)
-      (xwiki-test-range-has-face 25 26 'xwiki-markup-face)
-      (xwiki-test-range-has-face 27 35 nil))))
+  (let ((  test-string "regular --strike-through-- regular")
+        (marked-string "regular %%@@@@@@@@@@@@@@%% regular")
+        (markings '((?% . 'xwiki-markup-face)
+                    (?@ . 'xwiki-strike-through-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-monospace-face ()
   "Basic test for `xwiki-monospace-face' of `xwiki-view-mode'."
-  (let ((test-string "regular ##monospace## regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 19 'xwiki-inline-code-face)
-      (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
-      (xwiki-test-range-has-face 22 30 nil))))
+  (let ((  test-string "regular ##monospace## regular")
+        (marked-string "regular %%@@@@@@@@@%% regular")
+        (markings '((?% . 'xwiki-markup-face)
+                    (?@ . 'xwiki-inline-code-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-subscript-face ()
   "Basic test for `xwiki-subscript-face' of `xwiki-view-mode'."
-  (let ((test-string "regular ,,subscript,, regular"))
-    (xwiki-test-string
-     test-string
-     (xwiki-test-range-has-face 1 8 nil)
-     (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-     (xwiki-test-range-has-face 11 19 'xwiki-subscript-face)
-     (xwiki-test-range-has-face 20 21 'xwiki-markup-face)
-     (xwiki-test-range-has-face 22 30 nil))))
+  (let ((  test-string "regular ,,subscript,, regular")
+        (marked-string "regular ##@@@@@@@@@## regular")
+        (markings '((?# . 'xwiki-markup-face)
+                    (?@ . 'xwiki-subscript-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-superscript-face ()
   "Basic test for `xwiki-superscript-face' of `xwiki-view-mode'."
-  (let ((test-string "regular ^^superscript^^ regular"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 8 nil)
-      (xwiki-test-range-has-face 9 10 'xwiki-markup-face)
-      (xwiki-test-range-has-face 11 21 'xwiki-superscript-face)
-      (xwiki-test-range-has-face 22 23 'xwiki-markup-face)
-      (xwiki-test-range-has-face 24 32 nil))))
+  (let ((  test-string "regular ^^superscript^^ regular")
+        (marked-string "regular ##@@@@@@@@@@@## regular")
+        (markings '((?# . 'xwiki-markup-face)
+                    (?@ . 'xwiki-superscript-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-numbered ()
   "Test for bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 1. foo
 11. bar
-1. baz"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 1 nil)
-      (let* ((i (1+ (string-match "1\\. foo" test-string)))
-             (a (+ i 2)))
-        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 3) nil))
-      (let* ((i (1+ (string-match "11\\. bar" test-string)))
-             (a (+ i 3)))
-        (xwiki-test-range-has-face i (+ i 2) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 3) nil))
-      (let* ((i (1+ (string-match "1\\. baz" test-string)))
-             (a (+ i 2)))
-        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 3) nil)))))
+1. baz")
+        (marked-string "
+@@ foo
+@@@ bar
+@@ baz")
+        (markings '((?@ . 'xwiki-list-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-bulleted ()
   "Test for bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 * foo
 ** bar
-* baz"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 1 nil)
-      (let* ((i (1+ (string-match "\\* foo" test-string)))
-             (a (1+ i)))
-        (xwiki-test-range-has-face i i 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 4) nil))
-      (let* ((i (1+ (string-match "\\*\\* bar" test-string)))
-             (a (+ i 2)))
-        (xwiki-test-range-has-face i (+ i 1) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 4) nil))
-      (let* ((i (1+ (string-match "\\* baz" test-string)))
-             (a (1+ i)))
-        (xwiki-test-range-has-face i i 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 4) nil)))))
+* baz")
+        (marked-string "
+@ foo
+@@ bar
+@ baz")
+        (markings '((?@ . 'xwiki-list-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-mixed ()
   "Test for mixed numbered/bulleted lists for `xwiki-list-face' of `xwiki-view-mode'."
   (let ((test-string "
 1. foo
 1*. bar
-1. baz"))
-    (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 1 nil)
-      (let* ((i (1+ (string-match "1\\. foo" test-string)))
-             (a (+ i 2)))
-        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 3) nil))
-      (let* ((i (1+ (string-match "1\\*\\. bar" test-string)))
-             (a (+ i 3)))
-        (xwiki-test-range-has-face i (+ i 2) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 4) nil))
-      (let* ((i (1+ (string-match "1\. baz" test-string)))
-             (a (+ i 2)))
-        (xwiki-test-range-has-face i (1+ i) 'xwiki-list-face)
-        (xwiki-test-range-has-face a (+ a 3) nil)))))
+1. baz")
+        (marked-string "
+@@ foo
+@@@ bar
+@@ baz")
+        (markings '((?@ . 'xwiki-list-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (ert-deftest test-xwiki-view-mode/xwiki-list-face-not ()
   "Test for list-like but not lists: `xwiki-list-face' of `xwiki-view-mode'."
@@ -302,9 +266,8 @@ second line__"))
 :not
 ::not
 ")
-         (expectation-patterns '((?@ . 'xwiki-definition-list-face)))
-         (tests (xwiki--build-tests marked-string expectation-patterns)))
-    (eval `(xwiki-test-string ,test-string ,@tests)))  )
+         (markings '((?@ . 'xwiki-definition-list-face))))
+    (xwiki--test-with-marked-string test-string marked-string markings)))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
