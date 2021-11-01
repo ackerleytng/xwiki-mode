@@ -102,49 +102,15 @@
 
 ;;; Helpers ============================================================
 
-(defun xwiki--string-match-all (regexp string)
-  "Get a list of all regexp matches in a string"
-  (let* ((pos 0)
-         matches
-         (m (and (> (length string) 0) (string-match regexp string pos))))
-    (while m
-      (push m matches)
-      (setq pos (1+ m)
-            m (string-match regexp string pos)))
-    (reverse matches)))
-
-(defun xwiki--alist-loc-to-face (expectation expectation-pattern)
-  (let* ((marker (car expectation-pattern))
-         (face (cdr expectation-pattern))
-         (loc 0))
-    (let ((total 0)
-          (prev-len 0)
-          locs-to-face)
-      (dolist (s (split-string expectation "\n"))
-        (if-let ((matches (xwiki--string-match-all marker s)))
-            (setq locs-to-face
-                  (append
-                   locs-to-face
-                   (mapcar (lambda (i) (cons (- (+ total i) prev-len) face))
-                           matches)))
-          (setq prev-len (length s)
-                total (+ total prev-len 1))))
-      locs-to-face)))
-
-(defun xwiki--remove-lines (string pattern)
-  (let* ((lines (split-string string "\n"))
-         (filtered (seq-filter (lambda (l) (not (string-match pattern l))) lines)))
-    (mapconcat 'identity filtered "\n")))
-
-(defun xwiki--build-tests-from-expectation (expectation expectation-pattern test-string-length)
-  (let* ((loc-to-face (xwiki--alist-loc-to-face expectation expectation-pattern))
-         (tests (mapcar (lambda (p) `(xwiki-test-loc-has-face ,(car p) ,(cdr p))) loc-to-face))
-         (nils (remq
-                nil
-                (mapcar
-                 (lambda (i) (unless (alist-get i loc-to-face) (list 'xwiki-test-loc-has-face i nil)))
-                 (number-sequence 1 test-string-length)))))
-    (append tests nils)))
+(defun xwiki--build-tests (marked-string expected-faces)
+  (let (out)
+    (dolist (i (number-sequence 0 (1- (length marked-string))))
+      (let ((char (aref marked-string i)))
+        (push (if-let ((face (alist-get char expected-faces)))
+                  (list 'xwiki-test-loc-has-face (1+ i) face)
+                `(xwiki-test-loc-has-face ,(1+ i) nil))
+              out)))
+    (reverse out)))
 
 ;;; Tests ============================================================
 
@@ -316,23 +282,29 @@ second line__"))
 
 (ert-deftest test-xwiki-view-mode/xwiki-definition-list-face ()
   "Test for definition lists for `xwiki-definition-list-face' of `xwiki-view-mode'."
-  (let* ((expectation "
+  (let* ((test-string "
 ; term
-@
 : definition
-@
+
 :; nested term
-@@
 :: nested definition
-@@
+
 :not
 ::not
 ")
-         (expectation-pattern '("@" . 'xwiki-definition-list-face))
-         (test-string (xwiki--remove-lines expectation (car expectation-pattern)))
-         (tests (xwiki--build-tests-from-expectation
-                 expectation expectation-pattern (length test-string))))
-    (eval `(xwiki-test-string ,test-string ,@tests))))
+         (marked-string "
+@ term
+@ definition
+
+@@ nested term
+@@ nested definition
+
+:not
+::not
+")
+         (expectation-patterns '((?@ . 'xwiki-definition-list-face)))
+         (tests (xwiki--build-tests marked-string expectation-patterns)))
+    (eval `(xwiki-test-string ,test-string ,@tests)))  )
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
