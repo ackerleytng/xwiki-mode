@@ -315,10 +315,14 @@ regular %%@@@@@@@@@@@@@@%% regular
   (let* ((test-string "
 = header =
 
+= hea=der =
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@
+
+@@@@@@@@@@@
 
 other text
 ")
@@ -331,10 +335,14 @@ other text
   (let* ((test-string "
 == header ==
 
+== hea=der ==
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@@@
+
+@@@@@@@@@@@@@
 
 other text
 ")
@@ -347,10 +355,14 @@ other text
   (let* ((test-string "
 === header ===
 
+=== hea=der ===
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@
 
 other text
 ")
@@ -363,10 +375,14 @@ other text
   (let* ((test-string "
 ==== header ====
 
+==== hea=der ====
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@
 
 other text
 ")
@@ -379,10 +395,14 @@ other text
   (let* ((test-string "
 ===== header =====
 
+===== hea=der =====
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@@@
 
 other text
 ")
@@ -395,10 +415,14 @@ other text
   (let* ((test-string "
 ====== header ======
 
+====== hea=der ======
+
 other text
 ")
          (marked-string "
 @@@@@@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@@@@@
 
 other text
 ")

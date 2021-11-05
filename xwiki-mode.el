@@ -196,7 +196,8 @@
 (defconst xwiki-regex-header-1
   (rx (and line-start
            (group (repeat 1 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 1 ?=))
            (zero-or-more space)
            line-end)))
@@ -204,7 +205,8 @@
 (defconst xwiki-regex-header-2
   (rx (and line-start
            (group (repeat 2 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 2 ?=))
            (zero-or-more space)
            line-end)))
@@ -212,7 +214,8 @@
 (defconst xwiki-regex-header-3
   (rx (and line-start
            (group (repeat 3 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 3 ?=))
            (zero-or-more space)
            line-end)))
@@ -220,7 +223,8 @@
 (defconst xwiki-regex-header-4
   (rx (and line-start
            (group (repeat 4 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 4 ?=))
            (zero-or-more space)
            line-end)))
@@ -228,7 +232,8 @@
 (defconst xwiki-regex-header-5
   (rx (and line-start
            (group (repeat 5 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 5 ?=))
            (zero-or-more space)
            line-end)))
@@ -236,7 +241,8 @@
 (defconst xwiki-regex-header-6
   (rx (and line-start
            (group (repeat 6 ?=)
-                  (zero-or-more (not (any ?\n ?=)))
+                  (not ?=)
+                  (zero-or-more not-newline)
                   (repeat 6 ?=))
            (zero-or-more space)
            line-end)))
