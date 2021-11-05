@@ -98,6 +98,47 @@
   "Face for markup elements."
   :group 'xwiki-faces)
 
+(defface xwiki-header-face
+  '((t (:inherit (variable-pitch font-lock-function-name-face bold))))
+  "Base face for headers."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-1
+  '((t (:inherit xwiki-header-face
+                 :height 2.0)))
+  "Face for header 1."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-2
+  '((t (:inherit xwiki-header-face
+                 :height 1.7)))
+  "Face for header 2."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-3
+  '((t (:inherit xwiki-header-face
+                 :height 1.4)))
+  "Face for header 3."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-4
+  '((t (:inherit xwiki-header-face
+                 :height 1.1)))
+  "Face for header 4."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-5
+  '((t (:inherit xwiki-header-face
+                 :height 1.0)))
+  "Face for header 5."
+  :group 'xwiki-faces)
+
+(defface xwiki-header-face-6
+  '((t (:inherit xwiki-header-face
+                 :height 1.0)))
+  "Face for header 6."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -152,6 +193,54 @@
            (0+ space)
            line-end)))
 
+(defconst xwiki-regex-header-1
+  (rx (and line-start
+           (group (repeat 1 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 1 ?=))
+           (zero-or-more space)
+           line-end)))
+
+(defconst xwiki-regex-header-2
+  (rx (and line-start
+           (group (repeat 2 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 2 ?=))
+           (zero-or-more space)
+           line-end)))
+
+(defconst xwiki-regex-header-3
+  (rx (and line-start
+           (group (repeat 3 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 3 ?=))
+           (zero-or-more space)
+           line-end)))
+
+(defconst xwiki-regex-header-4
+  (rx (and line-start
+           (group (repeat 4 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 4 ?=))
+           (zero-or-more space)
+           line-end)))
+
+(defconst xwiki-regex-header-5
+  (rx (and line-start
+           (group (repeat 5 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 5 ?=))
+           (zero-or-more space)
+           line-end)))
+
+(defconst xwiki-regex-header-6
+  (rx (and line-start
+           (group (repeat 6 ?=)
+                  (zero-or-more (not (any ?\n ?=)))
+                  (repeat 6 ?=))
+           (zero-or-more space)
+           line-end)))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-horizontal-line . ((1 'xwiki-horizontal-line-face)))
     (,xwiki-regex-bold . ((1 'xwiki-markup-face)
@@ -176,7 +265,13 @@
                                  (2 '(face xwiki-superscript-face display (raise 0.3)))
                                  (3 'xwiki-markup-face)))
     (,xwiki-regex-list . ((1 'xwiki-list-face)))
-    (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)))))
+    (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)))
+    (,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
+    (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
+    (,xwiki-regex-header-3 . ((1 'xwiki-header-face-3)))
+    (,xwiki-regex-header-4 . ((1 'xwiki-header-face-4)))
+    (,xwiki-regex-header-5 . ((1 'xwiki-header-face-5)))
+    (,xwiki-regex-header-6 . ((1 'xwiki-header-face-6)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
