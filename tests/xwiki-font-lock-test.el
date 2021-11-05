@@ -68,10 +68,12 @@
          (succeed (if (and property (listp property))
                       (memq value property)
                     (eq property value))))
-    (if succeed
-        (message "loc: %d (%s) => correct" loc (string (char-after loc)))
-      (message "loc: %d (%s) => expected %s: %s, actual: %s"
-               loc (string (char-after loc)) prop value property))
+    (if-let ((c (char-after loc)))
+        (if succeed
+            (message "loc: %d (%s) => correct" loc (string c))
+          (message "loc: %d (%s) => expected %s: %s, actual: %s"
+                   loc (string c) prop value property))
+      (message "loc: %d => nothing here" loc))
     succeed))
 
 (defun xwiki-test-loc-has-face (loc value)
@@ -266,7 +268,7 @@ regular %%@@@@@@@@@@@@@@%% regular
       (xwiki-test-range-has-face 1 (length test-string) nil))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-definition-list-face ()
-  "Test for definition lists for `xwiki-definition-list-face' of `xwiki-view-mode'."
+  "Test for `xwiki-definition-list-face' of `xwiki-view-mode'."
   (let* ((test-string "
 ; term
 : definition
@@ -292,7 +294,7 @@ regular %%@@@@@@@@@@@@@@%% regular
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-horizontal-line-face ()
-  "Test for definition lists for `xwiki-horizontal-line-face' of `xwiki-view-mode'."
+  "Test for `xwiki-horizontal-line-face' of `xwiki-view-mode'."
   (let* ((test-string "
 ---- this is fontified as strike-through but without any contents
   ---- same here
@@ -311,7 +313,7 @@ regular %%@@@@@@@@@@@@@@%% regular
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-1 ()
-  "Test for definition lists for `xwiki-header-face-1' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-1' of `xwiki-view-mode'."
   (let* ((test-string "
 = header =
 
@@ -331,7 +333,7 @@ other text
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-2 ()
-  "Test for definition lists for `xwiki-header-face-2' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-2' of `xwiki-view-mode'."
   (let* ((test-string "
 == header ==
 
@@ -351,7 +353,7 @@ other text
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-3 ()
-  "Test for definition lists for `xwiki-header-face-3' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-3' of `xwiki-view-mode'."
   (let* ((test-string "
 === header ===
 
@@ -371,7 +373,7 @@ other text
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-4 ()
-  "Test for definition lists for `xwiki-header-face-4' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-4' of `xwiki-view-mode'."
   (let* ((test-string "
 ==== header ====
 
@@ -391,7 +393,7 @@ other text
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-5 ()
-  "Test for definition lists for `xwiki-header-face-5' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-5' of `xwiki-view-mode'."
   (let* ((test-string "
 ===== header =====
 
@@ -411,7 +413,7 @@ other text
       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-6 ()
-  "Test for definition lists for `xwiki-header-face-6' of `xwiki-view-mode'."
+  "Test for `xwiki-header-face-6' of `xwiki-view-mode'."
   (let* ((test-string "
 ====== header ======
 
@@ -430,8 +432,24 @@ other text
     (xwiki-test-string test-string
       (xwiki--test-with-marked-string marked-string markings))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-header-face-priority ()
+  "Test for header priority of `xwiki-view-mode'."
+  (let* ((test-string "
+====== header //italic// ======
+
+other text
+")
+         (marked-string "
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+other text
+")
+         (markings '((?@ . xwiki-header-face-6))))
+    (xwiki-test-string test-string
+      (xwiki--test-with-marked-string marked-string markings))))
+
 (ert-deftest test-xwiki-view-mode/xwiki-header-face-not ()
-  "Test for definition lists for non-headers of `xwiki-view-mode'."
+  "Test for non-headers of `xwiki-view-mode'."
   (let* ((test-string "
 ======= no header 7 =======
 
@@ -440,6 +458,19 @@ other text
     (xwiki-test-string
         test-string
       (xwiki-test-range-has-face 1 (length test-string) nil))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-newline-face ()
+  "Test for `xwiki-newline-face` of `xwiki-view-mode'."
+  (let* ((test-string "
+foo\\\\bar
+")
+         (marked-string "
+foo@@bar
+")
+         (markings '((?@ . xwiki-newline-face))))
+    (xwiki-test-string
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here

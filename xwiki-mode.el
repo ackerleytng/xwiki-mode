@@ -139,6 +139,11 @@
   "Face for header 6."
   :group 'xwiki-faces)
 
+(defface xwiki-newline-face
+  '((t (:inherit xwiki-markup-face)))
+  "Face for newline."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -247,8 +252,17 @@
            (zero-or-more space)
            line-end)))
 
+(defconst xwiki-regex-newline
+  (rx (group "\\")))
+
 (defvar xwiki-mode-font-lock-keywords
-  `((,xwiki-regex-horizontal-line . ((1 'xwiki-horizontal-line-face)))
+  `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
+    (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
+    (,xwiki-regex-header-3 . ((1 'xwiki-header-face-3)))
+    (,xwiki-regex-header-4 . ((1 'xwiki-header-face-4)))
+    (,xwiki-regex-header-5 . ((1 'xwiki-header-face-5)))
+    (,xwiki-regex-header-6 . ((1 'xwiki-header-face-6)))
+    (,xwiki-regex-horizontal-line . ((1 'xwiki-horizontal-line-face)))
     (,xwiki-regex-bold . ((1 'xwiki-markup-face)
                           (2 'xwiki-bold-face)
                           (3 'xwiki-markup-face)))
@@ -272,12 +286,7 @@
                                  (3 'xwiki-markup-face)))
     (,xwiki-regex-list . ((1 'xwiki-list-face)))
     (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)))
-    (,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
-    (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
-    (,xwiki-regex-header-3 . ((1 'xwiki-header-face-3)))
-    (,xwiki-regex-header-4 . ((1 'xwiki-header-face-4)))
-    (,xwiki-regex-header-5 . ((1 'xwiki-header-face-5)))
-    (,xwiki-regex-header-6 . ((1 'xwiki-header-face-6)))))
+    (,xwiki-regex-newline . ((1 'xwiki-newline-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
