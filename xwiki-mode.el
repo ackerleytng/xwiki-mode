@@ -93,6 +93,11 @@
   "Face for markup elements."
   :group 'xwiki-faces)
 
+(defface xwiki-horizontal-line-face
+  '((t (:inherit xwiki-markup-face)))
+  "Face for markup elements."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -112,7 +117,7 @@
 
 (defconst xwiki-regex-strike-through
   (rx (group "--")
-      (group (minimal-match (zero-or-more anything)))
+      (group (minimal-match (zero-or-more not-newline)))
       (group "--")))
 
 (defconst xwiki-regex-monospace
@@ -131,17 +136,25 @@
       (group ",,")))
 
 (defconst xwiki-regex-list
-  (rx (and (group line-start
-                  (or (and (1+ "1") (0+ "*")  ".")
+  (rx (and line-start
+           (group (or (and (1+ "1") (0+ "*")  ".")
                       (1+ "*")))
-           (group space))))
+           space)))
 
 (defconst xwiki-regex-definition-list
-  (rx (and (group line-start (0+ ":")  (or ";" ":"))
-           (group space))))
+  (rx (and line-start
+           (group (0+ ":")  (or ";" ":"))
+           space)))
+
+(defconst xwiki-regex-horizontal-line
+  (rx (and line-start
+           (group (repeat 4 ?-))
+           (0+ space)
+           line-end)))
 
 (defvar xwiki-mode-font-lock-keywords
-  `((,xwiki-regex-bold . ((1 'xwiki-markup-face)
+  `((,xwiki-regex-horizontal-line . ((1 'xwiki-horizontal-line-face)))
+    (,xwiki-regex-bold . ((1 'xwiki-markup-face)
                           (2 'xwiki-bold-face)
                           (3 'xwiki-markup-face)))
     (,xwiki-regex-italic . ((1 'xwiki-markup-face)
@@ -162,16 +175,14 @@
     (,xwiki-regex-superscript . ((1 'xwiki-markup-face)
                                  (2 '(face xwiki-superscript-face display (raise 0.3)))
                                  (3 'xwiki-markup-face)))
-    (,xwiki-regex-list . ((1 'xwiki-list-face)
-                          (2 nil)))
-    (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)
-                                     (2 nil)))))
+    (,xwiki-regex-list . ((1 'xwiki-list-face)))
+    (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
   "Major mode for editing XWiki files"
 
-  (setq font-lock-defaults '(xwiki-mode-font-lock-keywords)))
+  (setq font-lock-defaults '(xwiki-mode-font-lock-keywords t)))
 
 (provide 'xwiki-mode)
 ;;; xwiki-mode.el ends here
