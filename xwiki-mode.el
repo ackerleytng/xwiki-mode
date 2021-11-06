@@ -154,6 +154,11 @@
   "Face for parameters."
   :group 'xwiki-faces)
 
+(defface xwiki-quotation-face
+  '((t (:inherit xwiki-markup-face)))
+  "Face for quotations."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -275,6 +280,11 @@
            (group (minimal-match (zero-or-more not-newline)))
            (group "%)"))))
 
+(defconst xwiki-regex-quotation
+  (rx (and line-start
+           (group (0+ ">"))
+           space)))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -317,7 +327,8 @@
                 "\\\""))
       (re-search-backward (rx "[[")) nil
       (1 'xwiki-link-face) (2 'xwiki-markup-face)))
-    (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))))
+    (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))
+    (,xwiki-regex-quotation . ((1 'xwiki-quotation-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"

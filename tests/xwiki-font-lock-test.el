@@ -521,5 +521,20 @@ text
         test-string
       (xwiki--test-with-marked-string marked-string markings))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-quotation-face ()
+  "Test for `xwiki-quotation-face` of `xwiki-view-mode'."
+  (let* ((test-string "
+> test
+>> test
+")
+         (marked-string "
+@ test
+@@ test
+")
+         (markings '((?@ . xwiki-quotation-face))))
+    (xwiki-test-string
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
+
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
