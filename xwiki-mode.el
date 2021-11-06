@@ -144,6 +144,11 @@
   "Face for newline."
   :group 'xwiki-faces)
 
+(defface xwiki-link-face
+  '((t (:inherit link)))
+  "Face for links."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -255,6 +260,11 @@
 (defconst xwiki-regex-newline
   (rx (group "\\")))
 
+(defconst xwiki-regex-anchor-link
+  (rx (and (group "[[")
+           (minimal-match (zero-or-more not-newline))
+           (group "]]"))))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -286,7 +296,15 @@
                                  (3 'xwiki-markup-face)))
     (,xwiki-regex-list . ((1 'xwiki-list-face)))
     (,xwiki-regex-definition-list . ((1 'xwiki-definition-list-face)))
-    (,xwiki-regex-newline . ((1 'xwiki-newline-face)))))
+    (,xwiki-regex-newline . ((1 'xwiki-newline-face)))
+    (,xwiki-regex-anchor-link
+     (1 'xwiki-markup-face)
+     (2 'xwiki-markup-face)
+     (,(rx (and "[["
+                (group (minimal-match (one-or-more not-newline)))
+                (group (or ">>" "]]" "||"))))
+      (re-search-backward (rx "[[")) nil
+      (1 'xwiki-link-face) (2 'xwiki-markup-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
