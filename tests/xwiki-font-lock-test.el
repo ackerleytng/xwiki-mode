@@ -536,5 +536,22 @@ text
         test-string
       (xwiki--test-with-marked-string marked-string markings))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-group-face ()
+  "Test for `xwiki-group-face` of `xwiki-view-mode'."
+  (let* ((test-string "
+(((
+some group
+)))
+")
+         (marked-string "
+@@@
+some group
+@@@
+")
+         (markings '((?@ . xwiki-markup-face))))
+    (xwiki-test-string
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
+
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here

@@ -285,6 +285,12 @@
            (group (0+ ">"))
            space)))
 
+(defconst xwiki-regex-group-start
+  (rx "((("))
+
+(defconst xwiki-regex-group-end
+  (rx ")))"))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -328,7 +334,9 @@
       (re-search-backward (rx "[[")) nil
       (1 'xwiki-link-face) (2 'xwiki-markup-face)))
     (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))
-    (,xwiki-regex-quotation . ((1 'xwiki-quotation-face)))))
+    (,xwiki-regex-quotation . ((1 'xwiki-quotation-face)))
+    (,xwiki-regex-group-start . ((0 'xwiki-markup-face)))
+    (,xwiki-regex-group-end . ((0 'xwiki-markup-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
