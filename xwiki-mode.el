@@ -99,7 +99,7 @@
   :group 'xwiki-faces)
 
 (defface xwiki-header-face
-  '((t (:inherit (variable-pitch font-lock-function-name-face bold))))
+  '((t (:inherit (variable-pitch font-lock-builtin-face bold))))
   "Base face for headers."
   :group 'xwiki-faces)
 
@@ -147,6 +147,11 @@
 (defface xwiki-link-face
   '((t (:inherit link)))
   "Face for links."
+  :group 'xwiki-faces)
+
+(defface xwiki-parameter-face
+  '((t (:inherit font-lock-type-face)))
+  "Face for parameters."
   :group 'xwiki-faces)
 
 ;;; Font Lock ===================================================
@@ -265,6 +270,11 @@
            (minimal-match (zero-or-more not-newline))
            (group "]]"))))
 
+(defconst xwiki-regex-parameter
+  (rx (and (group "(%")
+           (group (minimal-match (zero-or-more not-newline)))
+           (group "%)"))))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -300,11 +310,14 @@
     (,xwiki-regex-anchor-link
      (1 'xwiki-markup-face)
      (2 'xwiki-markup-face)
-     (,(rx (and "[["
-                (group (minimal-match (one-or-more not-newline)))
-                (group (or ">>" "]]" "||"))))
+     (,(rx (and (group (minimal-match (one-or-more (or lower "-"))))
+                "="
+                "\\\""
+                (group (minimal-match (zero-or-more ascii)))
+                "\\\""))
       (re-search-backward (rx "[[")) nil
-      (1 'xwiki-link-face) (2 'xwiki-markup-face)))))
+      (1 'xwiki-link-face) (2 'xwiki-markup-face)))
+    (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))))
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"

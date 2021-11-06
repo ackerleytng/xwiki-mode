@@ -502,5 +502,24 @@ foo@@bar
         test-string
       (xwiki--test-with-marked-string marked-string markings))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-parameter-face ()
+  "Test for `xwiki-parameter-face` of `xwiki-view-mode'."
+  (let* ((test-string "
+(% class=\"myclass\" %)
+text
+
+(% color=\"red\" %)text(%%)
+")
+         (marked-string "
+@@@@@@@@@@@@@@@@@@@@@
+text
+
+@@@@@@@@@@@@@@@@@text@@@@
+")
+         (markings '((?@ . xwiki-parameter-face))))
+    (xwiki-test-string
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
+
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
