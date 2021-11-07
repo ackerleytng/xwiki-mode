@@ -326,11 +326,9 @@
     (,xwiki-regex-anchor-link
      (1 'xwiki-markup-face)
      (2 'xwiki-markup-face)
-     (,(rx (and (group (minimal-match (one-or-more (or lower "-"))))
-                "="
-                "\\\""
-                (group (minimal-match (zero-or-more ascii)))
-                "\\\""))
+     (,(rx (and "[["
+                (group (minimal-match (one-or-more not-newline)))
+                (group (or ">>" "||" "]]"))))
       (re-search-backward (rx "[[")) nil
       (1 'xwiki-link-face) (2 'xwiki-markup-face)))
     (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))
