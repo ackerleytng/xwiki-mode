@@ -336,11 +336,26 @@
     (,xwiki-regex-group-start . ((0 'xwiki-markup-face)))
     (,xwiki-regex-group-end . ((0 'xwiki-markup-face)))))
 
+(eval-when-compile
+  (defconst xwiki-syntax-propertize-rules
+    (syntax-propertize-precompile-rules
+     ("\\({\\){{" (1 "< b"))
+     ("}}\\(}\\)" (1 "> b")))))
+
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
   "Major mode for editing XWiki files"
 
-  (setq font-lock-defaults '(xwiki-mode-font-lock-keywords t)))
+  (setq-local comment-start "{{{")
+  (setq-local comment-end "}}}")
+
+  (setq-local syntax-propertize-function (syntax-propertize-rules xwiki-syntax-propertize-rules))
+
+  (setq-local font-lock-defaults '(xwiki-mode-font-lock-keywords)))
+
+;; AWESOME blogposts/references on writing a major mode
+;; https://fuco1.github.io/2017-06-01-The-absolute-awesomeness-of-anchored-font-lock-matchers.html
+;; https://futureboy.us/frinktools/emacs/frink-mode.el
 
 (provide 'xwiki-mode)
 ;;; xwiki-mode.el ends here
