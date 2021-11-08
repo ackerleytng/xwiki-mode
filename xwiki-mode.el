@@ -159,6 +159,11 @@
   "Face for quotations."
   :group 'xwiki-faces)
 
+(defface xwiki-macro-face
+  '((t (:inherit font-lock-preprocessor-face)))
+  "Face for macro markers."
+  :group 'xwiki-faces)
+
 ;;; Font Lock ===================================================
 
 (defconst xwiki-regex-bold
@@ -291,6 +296,11 @@
 (defconst xwiki-regex-group-end
   (rx ")))"))
 
+(defconst xwiki-regex-macro
+  (rx (group "{{" (optional ?/))
+      (group (minimal-match (one-or-more not-newline)))
+      (group (optional ?/) "}}")))
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -334,7 +344,10 @@
     (,xwiki-regex-parameter . ((0 'xwiki-parameter-face)))
     (,xwiki-regex-quotation . ((1 'xwiki-quotation-face)))
     (,xwiki-regex-group-start . ((0 'xwiki-markup-face)))
-    (,xwiki-regex-group-end . ((0 'xwiki-markup-face)))))
+    (,xwiki-regex-group-end . ((0 'xwiki-markup-face)))
+    (,xwiki-regex-macro . ((1 'xwiki-markup-face)
+                           (2 'xwiki-macro-face)
+                           (3 'xwiki-markup-face)))))
 
 (eval-when-compile
   (defconst xwiki-syntax-propertize-rules

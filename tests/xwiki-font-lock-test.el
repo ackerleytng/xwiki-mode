@@ -533,8 +533,8 @@ text
 ")
          (markings '((?@ . xwiki-quotation-face))))
     (xwiki-test-string
-     test-string
-     (xwiki--test-with-marked-string marked-string markings))))
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-group-face ()
   "Test for `xwiki-group-face` of `xwiki-view-mode'."
@@ -550,8 +550,8 @@ some group
 ")
          (markings '((?@ . xwiki-markup-face))))
     (xwiki-test-string
-     test-string
-     (xwiki--test-with-marked-string marked-string markings))))
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-verbatim ()
   "Test for xwiki verbatim markings `xwiki-view-mode'."
@@ -570,8 +570,30 @@ verbatim
          (markings '((?# . font-lock-comment-face)
                      (?@ . font-lock-comment-delimiter-face))))
     (xwiki-test-string
-     test-string
-     (xwiki--test-with-marked-string marked-string markings))))
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-macro-face ()
+  "Test for `xwiki-macro-face` of `xwiki-view-mode'."
+  (let* ((test-string "
+{{macro}}
+something
+{{/macro}}
+
+{{macro/}}
+")
+         (marked-string "
+@@#####@@
+something
+@@@#####@@
+
+@@#####@@@
+")
+         (markings '((?@ . xwiki-markup-face)
+                     (?# . xwiki-macro-face))))
+    (xwiki-test-string
+        test-string
+      (xwiki--test-with-marked-string marked-string markings))))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here
