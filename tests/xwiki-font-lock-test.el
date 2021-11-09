@@ -595,5 +595,177 @@ something
         test-string
       (xwiki--test-with-marked-string marked-string markings))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-table-at-point-p ()
+  "Test for `xwiki-macro-face` of `xwiki-view-mode'."
+  (xwiki-test-string
+      "| xwiki | table"
+    (should (xwiki-table-at-point-p)))
+  (xwiki-test-string
+      "not table"
+    (should (not (xwiki-table-at-point-p))))
+  (xwiki-test-string
+      "|=table|=header"
+    (should (xwiki-table-at-point-p))))
+
+(ert-deftest test-xwiki-view-mode/xwiki--pad-cell-content ()
+  "Test for `xwiki--pad-cell-content` of `xwiki-view-mode'."
+  (should (string= (xwiki--pad-cell-content "foo") "foo "))
+  (should (string= (xwiki--pad-cell-content "foo ") "foo "))
+  (should (string= (xwiki--pad-cell-content "") " ")))
+
+(ert-deftest test-xwiki-view-mode/xwiki--pad-cell-to-length ()
+  "Test for `xwiki--pad-cell-to-length` of `xwiki-view-mode'."
+  (should (string= (xwiki--pad-cell-to-length "foo" 10) "foo       "))
+  (should (string= (xwiki--pad-cell-to-length "foo" 3) "foo")))
+
+(ert-deftest test-xwiki-view-mode/xwiki--align-table ()
+  "Test for `xwiki--align-table` of `xwiki-view-mode'."
+  (let ((input "|= one |= two
+|three long long | four
+")
+        (expected "|= one           |= two
+|three long long | four
+"))
+    (should (string= (xwiki--align-table input) expected)))
+  (let ((input "| one | two
+|three long long | four
+")
+        (expected "| one            | two
+|three long long | four
+"))
+    (should (string= (xwiki--align-table input) expected)))
+  (let ((input "| one | two |
+|three | four |
+")
+        (expected "| one  | two  |
+|three | four |
+"))
+    (should (string= (xwiki--align-table input) expected))))
+
+(ert-deftest test-xwiki-view-mode/xwiki--table-get-column ()
+  "Test for `xwiki--table-get-column` of `xwiki-view-mode'."
+  (xwiki-test-string
+      "|= one |= two
+| one | two
+"
+    ;; First char on second line "(|)"
+    (next-line)
+    (should (= (xwiki--table-get-column) 0))
+    ;; First column "(o)ne"
+    (forward-char) (forward-char)
+    (should (= (xwiki--table-get-column) 1))
+    ;; First column "one (|) two"
+    (forward-char) (forward-char) (forward-char) (forward-char)
+    (should (= (xwiki--table-get-column) 1))
+    ;; Second column "one | (t)wo"
+    (forward-char) (forward-char)
+    (should (= (xwiki--table-get-column) 2))))
+
+(ert-deftest test-xwiki-view-mode/xwiki--table-equalize-column-count ()
+  "Test for `xwiki--table-equalize-column-count` of `xwiki-view-mode'."
+  (let ((input "|= one |= two |= three
+| one
+")
+        (expected "|= one |= two |= three
+| one||
+"))
+    (should (string= (xwiki--table-equalize-column-count input) expected)))
+  (let ((input "|= one |= two |= three
+| one||
+")
+        (expected "|= one |= two |= three
+| one||
+"))
+    (should (string= (xwiki--table-equalize-column-count input) expected)))
+  (let ((input "|= one |= two
+| one
+| one | two
+")
+        (expected "|= one |= two
+| one|
+| one | two
+"))
+    (should (string= (xwiki--table-equalize-column-count input) expected)))
+  (let ((input "|= one |= two
+| one | two |
+| one | two
+")
+        (expected "|= one |= two|
+| one | two |
+| one | two|
+"))
+    (should (string= (xwiki--table-equalize-column-count input) expected))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-align-table ()
+  "Test for `xwiki-align-table` of `xwiki-view-mode'."
+  (let ((input (string-trim-left "
+|= Title 1|= Title 2
+| Word 1| Word 2
+| Word 1| Word 2
+| Word 1| Word 2
+| Word 1| Word 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |= Title 2
+| Word 1   | Word 2
+| Word 1   | Word 2
+| Word 1   | Word 2
+| Word 1   | Word 2
+")))
+    (xwiki-test-string
+        input
+      (forward-line 1)
+      (forward-char) (forward-char) (forward-char)
+      (xwiki-align-table)
+      ;; Same cell, but at the beginning
+      (should (= (point) 24))
+      (should (string= (buffer-string) expected))))
+  (let ((input (string-trim-left "
+|= Title 1|= Title 2
+| Word 1| Word 2|
+| Word 1| Word 2
+| Word 1| Word 2
+| Word 1| Word 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |= Title 2 |
+| Word 1   | Word 2   |
+| Word 1   | Word 2   |
+| Word 1   | Word 2   |
+| Word 1   | Word 2   |
+")))
+    (xwiki-test-string
+        input
+      (forward-line 1)
+      (forward-char) (forward-char) (forward-char)
+      (xwiki-align-table)
+      ;; Same cell, but at the beginning
+      (should (= (point) 26))
+      (should (string= (buffer-string) expected))))
+  (let ((input (string-trim-left "
+|= Title 1||= Title 2
+| Word 1| Word 2|
+| Word 1| Word 2
+| Word 1| Word 2
+| Word 1| Word 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |        |= Title 2
+| Word 1   | Word 2 |
+| Word 1   | Word 2 |
+| Word 1   | Word 2 |
+| Word 1   | Word 2 |
+")))
+    (xwiki-test-string
+        input
+      ;; 1|(|)=
+      (dotimes (_ 11) (forward-char))
+      (xwiki-align-table)
+      ;; Same cell, but at the beginning
+      (should (= (point) 13))
+      (should (string= (buffer-string) expected)))))
+
+
+
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here

@@ -31,7 +31,135 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'font-lock)
+
+;;; Table management functions =================================================
+
+(defconst xwiki-table-line-regex
+  (rx line-start ?| (minimal-match (one-or-more not-newline)) ?|))
+
+(defun xwiki-table-at-point-p ()
+  "Return non-nil when point is in a table"
+  (save-excursion
+    (beginning-of-line)
+    (looking-at-p xwiki-table-line-regex)))
+
+(defun xwiki-table-begin ()
+  "Find the beginning of the table and return its position.
+This function assumes point is on a table."
+  (save-excursion
+    ;; Keep going up until we're out of the table
+    (while (and (not (bobp))
+                (xwiki-table-at-point-p))
+      (forward-line -1))
+    ;; Go one line down so that we're on the first character of the table (|)
+    (unless (or (eobp)
+                (xwiki-table-at-point-p))
+      (forward-line 1))
+    (point)))
+
+(defun xwiki-table-end ()
+  "Find the end of the table (first character of the next line, just outside the
+ table) and return its position. This function assumes point is on a table."
+  (save-excursion
+    ;; Keep going down until we're out of the table
+    (while (and (not (eobp))
+                (xwiki-table-at-point-p))
+      (forward-line 1))
+    (point)))
+
+(defun xwiki--pad-cell-content (cell-content)
+  (if (string-suffix-p " " cell-content)
+      cell-content
+    (concat cell-content " ")))
+
+(defun xwiki--pad-cell-to-length (cell-content desired)
+  "Right-pads cell-content to length desired.
+Assumes that desired >= length of cell-content."
+  (let ((padding-length (- desired (length cell-content))))
+    (concat cell-content (make-string padding-length ?\s))))
+
+(defun xwiki--align-table (table)
+  "Aligns a string, formatted as a table.
+Assumes that every row has an equal number of cells"
+  (let* ((lines (seq-filter (lambda (s) (> (length s) 0)) (split-string table "\n")))
+         (cells-raw (mapcar (lambda (l) (split-string l "|")) lines))
+         (cells (mapcar (lambda (l) (mapcar #'xwiki--pad-cell-content l))
+                        cells-raw))
+         (cell-lengths (mapcar (lambda (l) (mapcar #'length l)) cells))
+         (column-maximums (apply #'cl-mapcar #'max cell-lengths))
+         (new-rows (mapcar
+                    (lambda (l)
+                      (string-trim
+                       (string-join
+                        (cl-mapcar #'xwiki--pad-cell-to-length l column-maximums)
+                        "|")))
+                    cells)))
+    (concat (string-join new-rows "\n") "\n")))
+
+(defun xwiki--table-equalize-column-count (table)
+  "Adds columns so that all rows of a table has the same number of columns."
+  (let* ((lines (seq-filter (lambda (s) (> (length s) 0)) (split-string (string-trim-right table) "\n")))
+         (num-cols (mapcar (lambda (l) (cl-count ?| l)) lines))
+         (max-num-cols (apply #'max num-cols))
+         (new-lines (cl-mapcar (lambda (l cols) (concat l (make-string (- max-num-cols cols) ?|)))
+                               lines num-cols)))
+    (concat (string-join new-lines "\n") "\n")))
+
+(defun xwiki--table-get-column ()
+  "Return column index of point. Assumes that point is in a table."
+  (let ((beginning-to-point (buffer-substring-no-properties (line-beginning-position) (point))))
+    (cl-count ?| beginning-to-point)))
+
+(defun xwiki--table-goto-column (n)
+  "Return column index of point. Assumes that point is in a table."
+  (beginning-of-line)
+  (when (> n 0)
+    (while (and (> n 0) (not (search-forward "|" (point-at-eol) t n)))
+      (cl-decf n))))
+
+(defmacro xwiki--with-gensyms (symbols &rest body)
+  (declare (debug (sexp body)) (indent 1))
+  `(let ,(mapcar (lambda (s)
+                   `(,s (make-symbol (concat "--" (symbol-name ',s)))))
+                 symbols)
+     ,@body))
+
+(defmacro xwiki-table-save-cell (&rest body)
+  "Save cell at point, execute BODY and restore cell.
+This function assumes point is on a table."
+  (declare (debug (body)))
+  (xwiki--with-gensyms (line column)
+    `(let ((,line (copy-marker (line-beginning-position)))
+           (,column (xwiki--table-get-column)))
+       (unwind-protect
+           (progn ,@body)
+         (goto-char ,line)
+         (xwiki--table-goto-column ,column)
+         (set-marker ,line nil)))))
+
+(defun xwiki-align-table ()
+  "Re-aligns and cleans up table. Assumes point is in a table"
+  (interactive)
+  (let* ((begin (xwiki-table-begin))
+         (end (xwiki-table-end))
+         (table (buffer-substring-no-properties begin end))
+         (equalized (xwiki--table-equalize-column-count table))
+         (aligned (xwiki--align-table equalized))
+         (table-lines (seq-filter (lambda (l) (> (length l) 0)) (split-string table "\n")))
+         (aligned-table-lines (split-string aligned "\n")))
+    (xwiki-table-save-cell
+     (goto-char begin)
+     (while table-lines
+       (let ((old (pop table-lines))
+             (new (pop aligned-table-lines)))
+         (if (string= old new)
+             (forward-line)
+           (insert new "\n")
+           (delete-region (point) (line-beginning-position 2))))))))
+
+;;; xwiki faces ================================================================
 
 (defgroup xwiki-faces nil
   "Faces used in xwiki-mode."
@@ -164,7 +292,12 @@
   "Face for macro markers."
   :group 'xwiki-faces)
 
-;;; Font Lock ===================================================
+(defface xwiki-table-marker-face
+  '((t (:inherit xwiki-markup-face)))
+  "Face for table markers."
+  :group 'xwiki-faces)
+
+;;; Font lock regexes ==========================================================
 
 (defconst xwiki-regex-bold
   (rx (group "**")
@@ -301,6 +434,11 @@
       (group (minimal-match (one-or-more not-newline)))
       (group (optional ?/) "}}")))
 
+(defconst xwiki-regex-table-marker
+  (rx (and (or (not "|") line-start) (group "|" (optional ?=)) (not "|"))))
+
+;;; Font lock keywords =========================================================
+
 (defvar xwiki-mode-font-lock-keywords
   `((,xwiki-regex-header-1 . ((1 'xwiki-header-face-1)))
     (,xwiki-regex-header-2 . ((1 'xwiki-header-face-2)))
@@ -347,7 +485,10 @@
     (,xwiki-regex-group-end . ((0 'xwiki-markup-face)))
     (,xwiki-regex-macro . ((1 'xwiki-markup-face)
                            (2 'xwiki-macro-face)
-                           (3 'xwiki-markup-face)))))
+                           (3 'xwiki-markup-face)))
+    (,xwiki-regex-table-marker . ((1 'xwiki-table-marker-face)))))
+
+;;; Declaring derived mode =====================================================
 
 (eval-when-compile
   (defconst xwiki-syntax-propertize-rules
