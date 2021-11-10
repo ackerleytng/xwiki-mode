@@ -609,9 +609,11 @@ something
 
 (ert-deftest test-xwiki-view-mode/xwiki--pad-cell-content ()
   "Test for `xwiki--pad-cell-content` of `xwiki-view-mode'."
-  (should (string= (xwiki--pad-cell-content "foo") "foo "))
-  (should (string= (xwiki--pad-cell-content "foo ") "foo "))
-  (should (string= (xwiki--pad-cell-content "") " ")))
+  (should (string= (xwiki--pad-cell-content "foo") " foo "))
+  (should (string= (xwiki--pad-cell-content "foo   ") " foo "))
+  (should (string= (xwiki--pad-cell-content "") "  "))
+  (should (string= (xwiki--pad-cell-content "= test") "= test "))
+  (should (string= (xwiki--pad-cell-content "=test") "= test ")))
 
 (ert-deftest test-xwiki-view-mode/xwiki--pad-cell-to-length ()
   "Test for `xwiki--pad-cell-to-length` of `xwiki-view-mode'."
@@ -620,27 +622,37 @@ something
 
 (ert-deftest test-xwiki-view-mode/xwiki--align-table ()
   "Test for `xwiki--align-table` of `xwiki-view-mode'."
-  (let ((input "|= one |= two
-|three long long | four
+  (let ((input-expected '(("
+|= one |= two
+|pad first col header | four
+" . "
+|= one                 |= two
+| pad first col header | four
 ")
-        (expected "|= one           |= two
-|three long long | four
-"))
-    (should (string= (xwiki--align-table input) expected)))
-  (let ((input "| one | two
-|three long long | four
+                          ("
+|= one |= two
+|pad first col | four
+" . "
+|= one          |= two
+| pad first col | four
 ")
-        (expected "| one            | two
-|three long long | four
-"))
-    (should (string= (xwiki--align-table input) expected)))
-  (let ((input "| one | two |
-|three | four |
+                          ("
+| one| two
+|three | fix spacing
+" . "
+| one   | two
+| three | fix spacing
 ")
-        (expected "| one  | two  |
-|three | four |
-"))
-    (should (string= (xwiki--align-table input) expected))))
+                          ("
+| one | two |
+|should trim extra spaces                     | four |
+" . "
+| one                      | two  |
+| should trim extra spaces | four |
+"))))
+    (dolist (p input-expected)
+      (should (string= (xwiki--align-table (string-trim-left (car p)))
+                       (string-trim-left (cdr p)))))))
 
 (ert-deftest test-xwiki-view-mode/xwiki--table-get-column ()
   "Test for `xwiki--table-get-column` of `xwiki-view-mode'."
@@ -694,10 +706,17 @@ something
 | one | two |
 | one | two|
 "))
+    (should (string= (xwiki--table-equalize-column-count input) expected)))
+  (let ((input "|= one |= two
+| one
+")
+        (expected "|= one |= two
+| one|
+"))
     (should (string= (xwiki--table-equalize-column-count input) expected))))
 
-(ert-deftest test-xwiki-view-mode/xwiki-align-table ()
-  "Test for `xwiki-align-table` of `xwiki-view-mode'."
+(ert-deftest test-xwiki-view-mode/xwiki-table-align-simple ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
   (let ((input (string-trim-left "
 |= Title 1|= Title 2
 | Word 1| Word 2
@@ -716,10 +735,13 @@ something
         input
       (forward-line 1)
       (forward-char) (forward-char) (forward-char)
-      (xwiki-align-table)
+      (xwiki-table-align)
       ;; Same cell, but at the beginning
-      (should (= (point) 24))
-      (should (string= (buffer-string) expected))))
+      (should (= (point) 25))
+      (should (string= (buffer-string) expected)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-table-align-add-column-end ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
   (let ((input (string-trim-left "
 |= Title 1|= Title 2
 | Word 1| Word 2|
@@ -738,10 +760,13 @@ something
         input
       (forward-line 1)
       (forward-char) (forward-char) (forward-char)
-      (xwiki-align-table)
+      (xwiki-table-align)
       ;; Same cell, but at the beginning
-      (should (= (point) 26))
-      (should (string= (buffer-string) expected))))
+      (should (= (point) 27))
+      (should (string= (buffer-string) expected)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-table-align-add-column-middle ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
   (let ((input (string-trim-left "
 |= Title 1||= Title 2
 | Word 1| Word 2|
@@ -760,12 +785,86 @@ something
         input
       ;; 1|(|)=
       (dotimes (_ 11) (forward-char))
-      (xwiki-align-table)
+      (xwiki-table-align)
       ;; Same cell, but at the beginning
-      (should (= (point) 13))
+      (should (= (point) 14))
       (should (string= (buffer-string) expected)))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-table-forward-cell-simple ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
+  (let ((input (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1 | Cell 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1   | Cell 2
+")))
+    (xwiki-test-string
+        input
+      ;; | (C)ell 1
+      (forward-line 1)
+      (dotimes (_ 2) (forward-char))
+      (xwiki-table-forward-cell)
+      ;; | (C)ell 2
+      (should (= (point) 36))
+      (should (string= (buffer-string) expected)))))
 
+(ert-deftest test-xwiki-view-mode/xwiki-table-forward-cell-add-column ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
+  (let ((input (concat (string-trim-left "
+|= Title 1 |= Title 2
+| ") "\n"))
+        (expected (concat (string-trim-left "
+|= Title 1 |= Title 2
+|          | ") "\n")))
+    (xwiki-test-string
+        input
+      ;; | ()
+      (forward-line 1)
+      (dotimes (_ 2) (forward-char))
+      (xwiki-table-forward-cell)
+      ;; |          | ()
+      (should (= (point) 36))
+      (should (string= (buffer-string) expected)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-table-backward-cell-simple ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
+  (let ((input (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1 | Cell 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1   | Cell 2
+")))
+    (xwiki-test-string
+        input
+      ;; |= Tit(l)e 2
+      (dotimes (_ 17) (forward-char))
+      (xwiki-table-backward-cell)
+      ;; |= (T)itle 1
+      (should (= (point) 4))
+      (should (string= (buffer-string) expected)))))
+
+(ert-deftest test-xwiki-view-mode/xwiki-table-next-row-simple ()
+  "Test for `xwiki-table-align` of `xwiki-view-mode'."
+  (let ((input (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1 | Cell 2
+"))
+        (expected (string-trim-left "
+|= Title 1 |= Title 2
+| Cell 1   | Cell 2
+")))
+    (xwiki-test-string
+        input
+      ;; |= Tit(l)e 2
+      (dotimes (_ 17) (forward-char))
+      (xwiki-table-next-row)
+      ;; |= (C)ell 2
+      (should (= (point) 36))
+      (should (string= (buffer-string) expected)))))
 
 (provide 'xwiki-font-lock-test)
 ;;; xwiki-font-lock-test.el ends here

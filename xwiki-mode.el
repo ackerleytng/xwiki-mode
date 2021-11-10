@@ -37,7 +37,7 @@
 ;;; Table management functions =================================================
 
 (defconst xwiki-table-line-regex
-  (rx line-start ?| (minimal-match (one-or-more not-newline)) ?|))
+  (rx line-start ?|))
 
 (defun xwiki-table-at-point-p ()
   "Return non-nil when point is in a table"
@@ -70,9 +70,11 @@ This function assumes point is on a table."
     (point)))
 
 (defun xwiki--pad-cell-content (cell-content)
-  (if (string-suffix-p " " cell-content)
-      cell-content
-    (concat cell-content " ")))
+  (let* ((is-header (string-prefix-p "=" cell-content))
+         (actual-content (if is-header (substring cell-content 1) cell-content))
+         (trimmed (string-trim actual-content))
+         (padded (concat " " trimmed " ")))
+    (if is-header (concat "=" padded) padded)))
 
 (defun xwiki--pad-cell-to-length (cell-content desired)
   "Right-pads cell-content to length desired.
@@ -117,7 +119,9 @@ Assumes that every row has an equal number of cells"
   (beginning-of-line)
   (when (> n 0)
     (while (and (> n 0) (not (search-forward "|" (point-at-eol) t n)))
-      (cl-decf n))))
+      (cl-decf n)))
+  (when (looking-at " ")
+    (forward-char)))
 
 (defmacro xwiki--with-gensyms (symbols &rest body)
   (declare (debug (sexp body)) (indent 1))
@@ -139,7 +143,7 @@ This function assumes point is on a table."
          (xwiki--table-goto-column ,column)
          (set-marker ,line nil)))))
 
-(defun xwiki-align-table ()
+(defun xwiki-table-align ()
   "Re-aligns and cleans up table. Assumes point is in a table"
   (interactive)
   (let* ((begin (xwiki-table-begin))
@@ -158,6 +162,74 @@ This function assumes point is on a table."
              (forward-line)
            (insert new "\n")
            (delete-region (point) (line-beginning-position 2))))))))
+
+(defun xwiki-table-blank-line (line)
+  (replace-regexp-in-string (rx (not "|")) " " line))
+
+(defun xwiki-table-insert-row (&optional arg)
+  "Insert a new row above the row at point into the table.
+With optional argument ARG, insert below the current row."
+  (interactive "P")
+  (unless (xwiki-table-at-point-p)
+    (user-error "Not at a table"))
+  (let* ((line (buffer-substring
+                (line-beginning-position) (line-end-position)))
+         (new (xwiki-table-blank-line line)))
+    (beginning-of-line (if arg 2 1))
+    (unless (bolp) (insert "\n"))
+    (insert-before-markers new "\n")
+    (beginning-of-line 0)
+    (re-search-forward "| ?" (line-end-position) t)))
+
+(defun xwiki-table-next-row ()
+  "Go to the next row (same column) in the table.
+Create new table lines if required."
+  (interactive)
+  (unless (xwiki-table-at-point-p)
+    (user-error "Not at a table"))
+  (if (or (looking-at "[ \t]*$")
+          (save-excursion (skip-chars-backward " \t") (bolp)))
+      (newline)
+    (xwiki-table-align)
+    (let ((col (xwiki--table-get-column)))
+      (beginning-of-line 2)
+      (if (not (xwiki-table-at-point-p))
+          (progn
+            (beginning-of-line 0)
+            (xwiki-table-insert-row 'below)))
+      (xwiki--table-goto-column col)
+      (skip-chars-backward "^|\n\r")
+      (when (looking-at " ") (forward-char 1)))))
+
+(defun xwiki--table-normalize-position-in-cell ()
+  (cond ((looking-at-p " ") (forward-char))
+        ((looking-at-p "\n") (insert " "))
+        ((looking-at-p (rx (or "=" "|")))
+         (progn (forward-char) (xwiki--table-normalize-position-in-cell)))))
+
+(defun xwiki-table-forward-cell ()
+  "Go to the next cell in the table.
+Create new table lines if required."
+  (interactive)
+  (unless (xwiki-table-at-point-p)
+    (user-error "Not at a table"))
+  (xwiki-table-align)
+  (xwiki--table-normalize-position-in-cell)
+  (let ((end (xwiki-table-end)))
+    (if (search-forward "|" end t)
+        (xwiki--table-normalize-position-in-cell)
+      (xwiki-table-insert-row 'below))))
+
+(defun xwiki-table-backward-cell ()
+  "Go to the previous cell in the table."
+  (interactive)
+  (unless (xwiki-table-at-point-p)
+    (user-error "Not at a table"))
+  (xwiki-table-align)
+  (xwiki--table-normalize-position-in-cell)
+  (let ((beginning (xwiki-table-begin)))
+    (re-search-backward (rx (and "|" (minimal-match (one-or-more anything)) "|")) beginning t))
+  (xwiki--table-normalize-position-in-cell))
 
 ;;; xwiki faces ================================================================
 
@@ -197,7 +269,7 @@ This function assumes point is on a table."
   :group 'xwiki-faces)
 
 (defface xwiki-inline-code-face
-  '((t (:inherit (markdown-code-face font-lock-constant-face))))
+  '((t (:inherit (xwiki-code-face font-lock-constant-face))))
   "Face for inline code."
   :group 'xwiki-faces)
 
@@ -487,6 +559,40 @@ This function assumes point is on a table."
                            (2 'xwiki-macro-face)
                            (3 'xwiki-markup-face)))
     (,xwiki-regex-table-marker . ((1 'xwiki-table-marker-face)))))
+
+;;; Key mappings and functions =================================================
+
+(defun xwiki-enter-key ()
+  "Handle RET depending on the context"
+  (interactive)
+  (cond
+   ((xwiki-table-at-point-p)
+    (call-interactively #'xwiki-table-next-row))
+   (t (newline))))
+
+(defun xwiki-tab-key ()
+  "Handle TAB depending on the context"
+  (interactive)
+  (message "tab")
+  (cond
+   ((xwiki-table-at-point-p)
+    (call-interactively #'xwiki-table-forward-cell))
+   (t (indent-for-tab-command))))
+
+(defun xwiki-shift-tab-key ()
+  "Handle SHIFT-TAB depending on the context"
+  (interactive)
+  (message "shift-tab")
+  (when (xwiki-table-at-point-p)
+    (call-interactively #'xwiki-table-backward-cell)))
+
+(defvar xwiki-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'xwiki-enter-key)
+    (define-key map (kbd "TAB") 'xwiki-tab-key)
+    (define-key map (kbd "<backtab>") 'xwiki-shift-tab-key)
+    map)
+  "Keymap for Xwiki major mode.")
 
 ;;; Declaring derived mode =====================================================
 
