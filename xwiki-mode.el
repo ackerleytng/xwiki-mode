@@ -61,7 +61,8 @@ This function assumes point is on a table."
 
 (defun xwiki-table-end ()
   "Find the end of the table and return its position.
-The end of the table is the first character of the next line, just outside the table.  This function assumes point is on a table."
+The end of the table is the first character of the next line, just outside the
+table.  This function assumes point is on a table."
   (save-excursion
     ;; Keep going down until we're out of the table
     (while (and (not (eobp))
@@ -70,7 +71,7 @@ The end of the table is the first character of the next line, just outside the t
     (point)))
 
 (defun xwiki--pad-cell-content (cell-content)
-  "Return a trimmed and padded CELL-CONTENT so that it is ready for length measurement."
+  "Return a trimmed and padded CELL-CONTENT, ready for length measurement."
   (let* ((is-header (string-prefix-p "=" cell-content))
          (actual-content (if is-header (substring cell-content 1) cell-content))
          (trimmed (string-trim actual-content))
@@ -126,7 +127,8 @@ Assumes that every row has an equal number of cells"
 
 (defmacro xwiki--with-gensyms (symbols &rest body)
   "Generate symbols for use in a macro.
-SYMBOLS is an unquoted list of symbols, and BODY is where the generated symbols are used.  with-gensyms that is specifically for use with xwiki."
+SYMBOLS is an unquoted list of symbols, and BODY is where the generated symbols
+are used.  with-gensyms that is specifically for use with xwiki."
   (declare (debug (sexp body)) (indent 1))
   `(let ,(mapcar (lambda (s)
                    `(,s (make-symbol (concat "--" (symbol-name ',s)))))
@@ -206,7 +208,7 @@ Create new table lines if required."
       (when (looking-at " ") (forward-char 1)))))
 
 (defun xwiki--table-normalize-position-in-cell ()
-  "Normalize position in cell by navigating to just after the first space in a cell."
+  "Normalize position in cell by navigating to just after the first space."
   (cond ((looking-at-p " ") (forward-char))
         ((looking-at-p "\n") (insert " "))
         ((looking-at-p (rx (or "=" "|")))
