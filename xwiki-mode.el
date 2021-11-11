@@ -40,7 +40,7 @@
   (rx line-start ?|))
 
 (defun xwiki-table-at-point-p ()
-  "Return non-nil when point is in a table"
+  "Return non-nil when point is in a table."
   (save-excursion
     (beginning-of-line)
     (looking-at-p xwiki-table-line-regex)))
@@ -60,8 +60,8 @@ This function assumes point is on a table."
     (point)))
 
 (defun xwiki-table-end ()
-  "Find the end of the table (first character of the next line, just outside the
- table) and return its position. This function assumes point is on a table."
+  "Find the end of the table and return its position.
+The end of the table is the first character of the next line, just outside the table.  This function assumes point is on a table."
   (save-excursion
     ;; Keep going down until we're out of the table
     (while (and (not (eobp))
@@ -70,6 +70,7 @@ This function assumes point is on a table."
     (point)))
 
 (defun xwiki--pad-cell-content (cell-content)
+  "Return a trimmed and padded CELL-CONTENT so that it is ready for length measurement."
   (let* ((is-header (string-prefix-p "=" cell-content))
          (actual-content (if is-header (substring cell-content 1) cell-content))
          (trimmed (string-trim actual-content))
@@ -77,13 +78,13 @@ This function assumes point is on a table."
     (if is-header (concat "=" padded) padded)))
 
 (defun xwiki--pad-cell-to-length (cell-content desired)
-  "Right-pads cell-content to length desired.
+  "Right-pads CELL-CONTENT to length DESIRED.
 Assumes that desired >= length of cell-content."
   (let ((padding-length (- desired (length cell-content))))
     (concat cell-content (make-string padding-length ?\s))))
 
 (defun xwiki--align-table (table)
-  "Aligns a string, formatted as a table.
+  "Aligns a string, formatted as a TABLE.
 Assumes that every row has an equal number of cells"
   (let* ((lines (seq-filter (lambda (s) (> (length s) 0)) (split-string table "\n")))
          (cells-raw (mapcar (lambda (l) (split-string l "|")) lines))
@@ -101,7 +102,7 @@ Assumes that every row has an equal number of cells"
     (concat (string-join new-rows "\n") "\n")))
 
 (defun xwiki--table-equalize-column-count (table)
-  "Adds columns so that all rows of a table has the same number of columns."
+  "Add columns so that all rows of a TABLE has the same number of columns."
   (let* ((lines (seq-filter (lambda (s) (> (length s) 0)) (split-string (string-trim-right table) "\n")))
          (num-cols (mapcar (lambda (l) (cl-count ?| l)) lines))
          (max-num-cols (apply #'max num-cols))
@@ -110,12 +111,12 @@ Assumes that every row has an equal number of cells"
     (concat (string-join new-lines "\n") "\n")))
 
 (defun xwiki--table-get-column ()
-  "Return column index of point. Assumes that point is in a table."
+  "Return column index of point.  Assumes that point is in a table."
   (let ((beginning-to-point (buffer-substring-no-properties (line-beginning-position) (point))))
     (cl-count ?| beginning-to-point)))
 
 (defun xwiki--table-goto-column (n)
-  "Return column index of point. Assumes that point is in a table."
+  "Move cursor to the Nth column.  Assumes that point is in a table."
   (beginning-of-line)
   (when (> n 0)
     (while (and (> n 0) (not (search-forward "|" (point-at-eol) t n)))
@@ -124,6 +125,8 @@ Assumes that every row has an equal number of cells"
     (forward-char)))
 
 (defmacro xwiki--with-gensyms (symbols &rest body)
+  "Generate symbols for use in a macro.
+SYMBOLS is an unquoted list of symbols, and BODY is where the generated symbols are used.  with-gensyms that is specifically for use with xwiki."
   (declare (debug (sexp body)) (indent 1))
   `(let ,(mapcar (lambda (s)
                    `(,s (make-symbol (concat "--" (symbol-name ',s)))))
@@ -144,7 +147,7 @@ This function assumes point is on a table."
          (set-marker ,line nil)))))
 
 (defun xwiki-table-align ()
-  "Re-aligns and cleans up table. Assumes point is in a table"
+  "Re-aligns and cleans up table.  Assumes point is in a table."
   (interactive)
   (let* ((begin (xwiki-table-begin))
          (end (xwiki-table-end))
@@ -164,6 +167,7 @@ This function assumes point is on a table."
            (delete-region (point) (line-beginning-position 2))))))))
 
 (defun xwiki-table-blank-line (line)
+  "Remove all text in LINE, which is a row in a table."
   (replace-regexp-in-string (rx (not "|")) " " line))
 
 (defun xwiki-table-insert-row (&optional arg)
@@ -202,6 +206,7 @@ Create new table lines if required."
       (when (looking-at " ") (forward-char 1)))))
 
 (defun xwiki--table-normalize-position-in-cell ()
+  "Normalize position in cell by navigating to just after the first space in a cell."
   (cond ((looking-at-p " ") (forward-char))
         ((looking-at-p "\n") (insert " "))
         ((looking-at-p (rx (or "=" "|")))
@@ -234,7 +239,7 @@ Create new table lines if required."
 ;;; xwiki faces ================================================================
 
 (defgroup xwiki-faces nil
-  "Faces used in xwiki-mode."
+  "Faces used in `xwiki-mode'."
   :group 'xwiki
   :group 'faces)
 
@@ -563,7 +568,7 @@ Create new table lines if required."
 ;;; Key mappings and functions =================================================
 
 (defun xwiki-enter-key ()
-  "Handle RET depending on the context"
+  "Handle RET depending on the context."
   (interactive)
   (cond
    ((xwiki-table-at-point-p)
@@ -571,7 +576,7 @@ Create new table lines if required."
    (t (newline))))
 
 (defun xwiki-tab-key ()
-  "Handle TAB depending on the context"
+  "Handle TAB depending on the context."
   (interactive)
   (message "tab")
   (cond
@@ -580,7 +585,7 @@ Create new table lines if required."
    (t (indent-for-tab-command))))
 
 (defun xwiki-shift-tab-key ()
-  "Handle SHIFT-TAB depending on the context"
+  "Handle SHIFT-TAB depending on the context."
   (interactive)
   (message "shift-tab")
   (when (xwiki-table-at-point-p)
@@ -604,7 +609,7 @@ Create new table lines if required."
 
 ;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
-  "Major mode for editing XWiki files"
+  "Major mode for editing XWiki files."
 
   (setq-local comment-start "{{{")
   (setq-local comment-end "}}}")

@@ -63,7 +63,7 @@
     (message "%d: (%s) %s" loc (string (char-after loc)) (get-char-property loc prop))))
 
 (defun xwiki-test-loc-has-property (loc prop value)
-  "Return whether that character at loc (1-based) as prop equal to or containing VALUE."
+  "Return whether that character at LOC (1-based) as PROP equal to or containing VALUE."
   (let* ((property (get-char-property loc prop))
          (succeed (if (and property (listp property))
                       (memq value property)
@@ -77,7 +77,7 @@
     succeed))
 
 (defun xwiki-test-loc-has-face (loc value)
-  "Return whether character at loc (1-based) as prop equal to or containing VALUE."
+  "Return whether character at LOC (1-based) as prop equal to or containing VALUE."
   (xwiki-test-loc-has-property loc 'face value))
 
 (defun xwiki-test-range-has-property (begin end prop value)
@@ -111,8 +111,10 @@
        (cl-every (lambda (x) (consp x)) list)))
 
 (defun xwiki--test-with-marked-string (marked-string markings)
+  "Test in a buffer, based on MARKINGS in MARKED-STRING.
+MARKINGS is an alist of (character . face), where character is used in MARKED-STRING to denote where the associated face should be applied."
   (unless (alistp markings)
-    (error "markings has to be a proper alist"))
+    (error "MARKINGS has to be a proper alist"))
   (let (out)
     (dolist (i (number-sequence 0 (1- (length marked-string))))
       (let ((char (aref marked-string i)))
