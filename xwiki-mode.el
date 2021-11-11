@@ -7,7 +7,7 @@
 ;; Created: Oct 15, 2021
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "27.1"))
-;; Keywords: XWiki
+;; Keywords: languages, convenience, tools
 ;; URL: https://github.com/ackerleytng/xwiki-mode
 
 ;; This file is not part of GNU Emacs.
