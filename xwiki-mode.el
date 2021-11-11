@@ -610,6 +610,10 @@ Create new table lines if required."
      ("}}\\(}\\)" (1 "> b")))))
 
 ;;;###autoload
+(add-to-list 'auto-mode-alist
+             '("\\.xwiki$" . xwiki-mode))
+
+;;;###autoload
 (define-derived-mode xwiki-mode text-mode "XWiki"
   "Major mode for editing XWiki files."
 
