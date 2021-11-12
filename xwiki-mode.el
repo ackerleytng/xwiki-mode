@@ -389,7 +389,8 @@ Create new table lines if required."
       (group "__")))
 
 (defconst xwiki-regex-italic
-  (rx (group "//")
+  (rx (not ":")
+      (group "//")
       (group (minimal-match (zero-or-more anything)))
       (group "//")))
 

@@ -164,7 +164,11 @@ second line__")
         (markings '((?% . xwiki-markup-face)
                     (?@ . xwiki-italic-face))))
     (xwiki-test-string test-string
-      (xwiki--test-with-marked-string marked-string markings))))
+                       (xwiki--test-with-marked-string marked-string markings)))
+  (let ((test-string "https://google.com https://google.com"))
+    (xwiki-test-string
+     test-string
+     (xwiki-test-range-has-face 1 (length test-string) nil))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-strike-through-face ()
   "Basic test for `xwiki-strike-through-face' of `xwiki-view-mode'."
@@ -179,15 +183,15 @@ regular %%@@@@@@@@@@@@@@%% regular
         (markings '((?% . xwiki-markup-face)
                     (?@ . xwiki-strike-through-face))))
     (xwiki-test-string test-string
-      (xwiki--test-with-marked-string marked-string markings))))
+                       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-strike-through-face-not ()
   "Basic non-strikethrough test for `xwiki-strike-through-face' of `xwiki-view-mode'."
   (let ((test-string "-- newlines ignored
 --"))
     (xwiki-test-string
-        test-string
-      (xwiki-test-range-has-face 1 (length test-string) nil))))
+     test-string
+     (xwiki-test-range-has-face 1 (length test-string) nil))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-monospace-face ()
   "Basic test for `xwiki-monospace-face' of `xwiki-view-mode'."
@@ -196,7 +200,7 @@ regular %%@@@@@@@@@@@@@@%% regular
         (markings '((?% . xwiki-markup-face)
                     (?@ . xwiki-inline-code-face))))
     (xwiki-test-string test-string
-      (xwiki--test-with-marked-string marked-string markings))))
+                       (xwiki--test-with-marked-string marked-string markings))))
 
 (ert-deftest test-xwiki-view-mode/xwiki-subscript-face ()
   "Basic test for `xwiki-subscript-face' of `xwiki-view-mode'."
